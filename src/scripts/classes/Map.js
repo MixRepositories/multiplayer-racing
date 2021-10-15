@@ -62,11 +62,9 @@ class Map {
     })
   }
 
-  // createOil
-
-  getPlayerPosition () {
-    return this.tileMap.findObject('player', player => {
-      return player.name === 'player'
+  getPlayerPosition (name) {
+    return this.tileMap.findObject(name, player => {
+      return player.name === name
     })
   }
 

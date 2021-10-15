@@ -8,13 +8,26 @@ import StatsPanel from '../classes/StatsPanel'
 import StatsPopup from '../classes/StatsPopup'
 
 const LAPS = 1
+const CARS = {
+  BLUE: {
+    sprite: 'car_blue_1',
+    position: 'player'
+  },
+  RED: {
+    sprite: 'car_red_1',
+    position: 'enemy'
+  }
+}
 
 class GameScene extends Scene {
   constructor () {
     super(GAME)
   }
 
-  init () {
+  init (data) {
+    if (data.client) {
+      this.client = data.client
+    }
     this.cursors = this.input.keyboard.createCursorKeys()
   }
 
@@ -23,8 +36,17 @@ class GameScene extends Scene {
   }
 
   create () {
+    const configCars = this._getCarsConfig()
     this.map = new Map(this)
-    this.player = new Player({ scene: this, map: this.map })
+    this.player = new Player({ scene: this, map: this.map, car: configCars.player })
+    if (this.client) {
+      this.enemy = new Player({ scene: this, map: this.map, car: configCars.enemy })
+      this.client.on('enemyMove', (data) => {
+        this.enemy.car.setX(data.x)
+        this.enemy.car.setY(data.y)
+        this.enemy.car.setAngle(data.angle)
+      })
+    }
     this.stats = new Stats(this, LAPS)
     this.statsPanel = new StatsPanel(this, this.stats)
 
@@ -39,7 +61,17 @@ class GameScene extends Scene {
     })
   }
 
-  onLapComplete (lap) {
+  _getCarsConfig () {
+    const config = { player: CARS.BLUE, enemy: CARS.RED }
+    if (this.client && !this.client.master) {
+      config.player = CARS.RED
+      config.enemy = CARS.BLUE
+    }
+
+    return config
+  }
+
+  onLapComplete () {
     this.stats.onLapComplete()
 
     if (this.stats.complete) {
@@ -51,6 +83,17 @@ class GameScene extends Scene {
     this.stats.update(dt)
     this.statsPanel.update()
     this.player.move()
+    this._sync()
+  }
+
+  _sync () {
+    if (this.client) {
+      this.client.send({
+        x: this.player.car.x,
+        y: this.player.car.y,
+        angle: this.player.car.angle
+      })
+    }
   }
 }
 

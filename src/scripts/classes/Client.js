@@ -1,7 +1,7 @@
 import { Events } from 'phaser'
 import io from 'socket.io-client'
 
-const HOST = 'http://localhost:3000'
+const HOST = 'http://localhost:8753'
 
 export default class Client extends Events.EventEmitter {
   constructor () {
@@ -9,17 +9,32 @@ export default class Client extends Events.EventEmitter {
   }
 
   init () {
-    const socket = io(HOST)
-    socket.on('connect', () => {
+    this.master = false
+    this.socket = io(HOST)
+    this.socket.on('connect', () => {
       console.log('client connect')
     })
 
-    socket.on('disconnect', () => {
+    this.socket.on('disconnect', () => {
       console.log('client disconnect')
     })
 
-    socket.on('gameStart', () => {
+    this.socket.on('gameStart', (data) => {
+      if (data && data.master) {
+        this.master = data.master
+      }
       this.emit('game')
     })
+
+    this.socket.on('enemyMove', (data) => {
+      this.emit('enemyMove', data)
+    })
+  }
+
+  send (data) {
+    if (JSON.stringify(data) !== JSON.stringify(this.sent)) {
+      this.sent = data
+      this.socket.emit('playerMove', data)
+    }
   }
 }

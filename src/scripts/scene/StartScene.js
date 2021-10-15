@@ -57,20 +57,19 @@ class StartScene extends Scene {
   }
 
   _setEvents () {
-    this.soloGameButton.on('pointerdown', this._startSoloGame, this)
+    this.soloGameButton.on('pointerdown', this._startGame, this)
     this.multyGameButton.on('pointerdown', this._startMultyGame, this)
   }
 
-  _startSoloGame () {
-    this.scene.start(GAME)
+  _startGame () {
+    this.scene.start(GAME, { client: this.client })
   }
 
   _startMultyGame () {
-    console.log('click multyGameButton')
     this.client = new Client()
     this.client.init()
     this.client.on('game', () => {
-      this._startSoloGame()
+      this._startGame()
     })
   }
 }
